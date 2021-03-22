@@ -83,7 +83,7 @@ namespace System
             items = items.WhereNotNullOrWhiteSpace();
 
             if (items.Count() == 1)
-                return items.First();
+                return items.First()!;
 
             var array = items.ToArray();
             var builder = new StringBuilder();
