@@ -48,9 +48,9 @@ namespace System
             return value.ToLowerInvariant().EndsWith('s') ? value + "es" : value + "s";
         }
 
-        public static string AppendWithSeparator(this string value, string appendation)
+        public static string Append(this string value, string appendation)
         {
-            return value.AppendWithSeparator(string.Empty, appendation);
+            return value.Append(string.Empty, appendation);
         }
 
         /// <summary>
@@ -62,15 +62,15 @@ namespace System
         /// <param name="appendation">The string to append to the input string.</param>
         /// <example>
         /// <code>
-        /// string input = "c:\";
-        /// string separator = "\";
-        /// string appendation = "\users\administrator";
+        /// string input = @"c:\";
+        /// string separator = @"\";
+        /// string appendation = @"\users\administrator";
         /// string output = input.AppendWithSeparator(separator, appendation);
         /// // Output is "c:\users\administrator"
         /// // Note that the separator wasn't added because it was already there.
         /// </code>
         /// </example>
-        public static string AppendWithSeparator(this string value, string separator, string appendation)
+        public static string Append(this string value, string appendation, string separator)
         {
             string result = value ?? string.Empty;
             appendation ??= string.Empty;
@@ -79,7 +79,7 @@ namespace System
             if (string.IsNullOrEmpty(appendation))
                 return result;
 
-            if(result.EndsWith(separator) && appendation.StartsWith(separator))
+            if (result.EndsWith(separator) && appendation.StartsWith(separator))
             {
                 int takeChars = appendation.Length - separator.Length;
                 appendation = appendation.Right(takeChars);
@@ -288,11 +288,9 @@ namespace System
             if (string.IsNullOrEmpty(value))
                 return string.Empty;
 
-            if (value.IsAllSameCase())
-                value = value.ToLowerInvariant();
-
-            return Regex.Replace(value, @"(?<=(^|[.;:])\s*)[a-z]",
-                (match) => match.Value.ToUpper());
+            value = value.ToLowerInvariant();
+            var r = new Regex(@"(^[a-z])|\.\s+(.)", RegexOptions.ExplicitCapture);
+            return r.Replace(value, s => s.Value.ToUpper());
         }
     }
 }
