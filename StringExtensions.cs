@@ -10,62 +10,98 @@ namespace System
 {
     public static class StringExtensions
     {
-        public static string CollapseWhiteSpace(this string instance)
+        /// <summary>
+        /// Minimizes whitespace in the string by replacing all multiple occurences of whitespace with a single space character.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <example>Input: "Hi   you"; Output: "Hi you"</example>
+        /// <example>Input: "Foo
+        /// Bar"; Output: "Foo Bar"</example>
+        /// <remarks>Works on newline characters, tabs and all forms of whitespace.</remarks>
+        public static string CollapseWhiteSpace(this string value)
         {
-            return Regex.Replace(instance, @"\s+", " ");
-        }
-        public static string CollapseMultipleSpaces(this string instance)
-        {
-            return Regex.Replace(instance, " +", " ");
+            return Regex.Replace(value, @"\s+", " ");
         }
 
-        public static string AppendIfRequired(this string instance, string appendation)
+        /// <summary>
+        /// Minimizes whitespace in the string by replacing all multiple occurences of the space character with a single space character.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <example>Input: "Hi   you"; Output: "Hi you"</example>
+        /// <remarks>Only operates on space characters, not newline characters, tabs or any other forms of whitespace.</remarks>
+        public static string CollapseMultipleSpaces(this string value)
         {
-            return instance.AppendIfRequired(string.Empty, appendation);
+            return Regex.Replace(value, " +", " ");
         }
+
 
         /// <summary>
         /// A fallback option in case more advanced pluralizations don't yield a result, this function just naively adds an 's'
         /// on the end of any string that doesn't end in an 's' already, or an 'es' on the end of any string that already
         /// ends in an 's'.
         /// </summary>
-        /// <param name="instance"></param>
+        /// <param name="value"></param>
         /// <remarks>Although this only works with English regular nouns. To pluralize irregular English nouns, or nouns in other languages,
         /// consider using a <see cref="PluralizerAttribute" /> instead.</remarks>
-        public static string NaivePluralize(this string instance)
+        public static string NaivePluralize(this string value)
         {
-            return instance.ToLowerInvariant().EndsWith('s') ? instance + "es" : instance + "s";
+            return value.ToLowerInvariant().EndsWith('s') ? value + "es" : value + "s";
         }
 
-        public static string AppendIfRequired(this string instance, string separator, string appendation)
+        public static string AppendWithSeparator(this string value, string appendation)
         {
-            string result = instance ?? string.Empty;
+            return value.AppendWithSeparator(string.Empty, appendation);
+        }
+
+        /// <summary>
+        /// Appends the appendation string to the input string, separating them with the separator string. The separator string
+        /// is only added if it isn't already present at the end of the input string or the start of the appendation.
+        /// </summary>
+        /// <param name="value">The input string</param>
+        /// <param name="separator">The string to use as a separator, unless it's already present in the input or appendation.</param>
+        /// <param name="appendation">The string to append to the input string.</param>
+        /// <example>
+        /// <code>
+        /// string input = "c:\";
+        /// string separator = "\";
+        /// string appendation = "\users\administrator";
+        /// string output = input.AppendWithSeparator(separator, appendation);
+        /// // Output is "c:\users\administrator"
+        /// // Note that the separator wasn't added because it was already there.
+        /// </code>
+        /// </example>
+        public static string AppendWithSeparator(this string value, string separator, string appendation)
+        {
+            string result = value ?? string.Empty;
             appendation ??= string.Empty;
             separator ??= string.Empty;
 
-            if (appendation != string.Empty)
+            if (string.IsNullOrEmpty(appendation))
+                return result;
+
+            if(result.EndsWith(separator) && appendation.StartsWith(separator))
             {
-                if (result.EndsWith(separator) || appendation.StartsWith(separator) || result == string.Empty)
-                {
-                    result += appendation;
-                }
-                else
-                {
-                    result += separator + appendation;
-                }
+                int takeChars = appendation.Length - separator.Length;
+                appendation = appendation.Right(takeChars);
+            }
+
+            if (result.EndsWith(separator) || appendation.StartsWith(separator) || result == string.Empty)
+            {
+                result += appendation;
+            }
+            else
+            {
+                result += separator + appendation;
             }
 
             return result;
         }
 
-        public static IEnumerable<string> WhereNotNullOrEmpty(this IEnumerable<string?>? enumerable)
-        {
-            if (enumerable is null)
-                return new List<string>();
-
-            return enumerable.Where(item => !string.IsNullOrEmpty(item))!;
-        }
-
+        /// <summary>
+        /// Removes all the items that are null or empty strings or white space from the enumerable.
+        /// </summary>
+        /// <param name="value">An enumerable of strings.</param>
+        /// <returns>An enumerable resembling the input enumerable but with all the null, empty and white space items removed.</returns>
         public static IEnumerable<string> WhereNotNullOrWhiteSpace(this IEnumerable<string?>? enumerable)
         {
             if (enumerable is null)
@@ -74,7 +110,12 @@ namespace System
             return enumerable.Where(item => !string.IsNullOrWhiteSpace(item))!;
         }
 
-
+        /// <summary>
+        /// Creates a comma separated list of items in the input enumerable, and will optionally say "and" between the penultumate
+        /// and the final item.
+        /// </summary>
+        /// <param name="items">An enumerable of strings.</param>
+        /// <param name="sayAndBeforeFinalItem">Whether or not to say "and" between the penultumate and the final item.</param>
         public static string ToCommaSeparatedList(this IEnumerable<string?>? items, bool sayAndBeforeFinalItem = false)
         {
             if (items is null)
@@ -91,7 +132,7 @@ namespace System
             int last = array.Length - 1;
             int penultimate = last - 1;
 
-            for (int i = first; i < penultimate; i ++)
+            for (int i = first; i < penultimate; i++)
             {
                 builder.Append($"{array[i]}, ");
             }
@@ -111,52 +152,43 @@ namespace System
         }
 
 
-        public static string PrependIfRequired(this string value, string prependation, string separator = "")
+        /// <summary>
+        /// Returns the desired number of characters from the left hand side of a string.
+        /// </summary>
+        /// <param name="value">The input string</param>
+        /// <param name="maxLength">The maximum number of characters to take.</param>
+        /// <remarks>Takes less than the maximum number of characters if the input string is shorter than the maximum.</remarks>
+        public static string Left(this string value, int maxLength)
         {
-            if (value is null)
-                throw new ArgumentNullException(nameof(value));
-
-            if (string.IsNullOrEmpty(prependation))
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+            {
                 return value;
-
-            if (value.EndsWith(separator) || prependation.StartsWith(separator) || value == string.Empty)
-            {
-                value = prependation + value;
-            }
-            else
-            {
-                value = prependation + separator + value;
-            }
-
-            return value;
-        }
-
-
-        public static string Left(this string instance, int maxLength)
-        {
-            if (string.IsNullOrEmpty(instance) || instance.Length <= maxLength)
-            {
-                return instance;
             }
             else
             {
                 maxLength = Math.Abs(maxLength);
 
-                return instance.Substring(0, maxLength);
+                return value.Substring(0, maxLength);
             }
         }
 
-        public static string Right(this string instance, int maxLength)
+        /// <summary>
+        /// Returns the desired number of characters from the right hand side of a string.
+        /// </summary>
+        /// <param name="value">The input string</param>
+        /// <param name="maxLength">The maximum number of characters to take.</param>
+        /// <remarks>Takes less than the maximum number of characters if the input string is shorter than the maximum.</remarks>
+        public static string Right(this string value, int maxLength)
         {
-            if (string.IsNullOrEmpty(instance) || instance.Length <= maxLength)
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
             {
-                return instance;
+                return value;
             }
             else
             {
                 maxLength = Math.Abs(maxLength);
 
-                return instance.Substring(instance.Length - maxLength, maxLength);
+                return value.Substring(value.Length - maxLength, maxLength);
             }
         }
 
@@ -164,7 +196,7 @@ namespace System
         /// Cuts any characters off the end of a string that extend beyond the maxLength. Can then add on a trailing string if desired.
         /// Used for creating summaries.
         /// </summary>
-        /// <param name="instance"></param>
+        /// <param name="value"></param>
         /// <param name="maxLength"></param>
         /// <param name="trailing"></param>
         /// <returns></returns>
@@ -175,9 +207,9 @@ namespace System
         ///  result:
         ///  "This is a..."
         /// </remarks>
-        public static string Truncate(this string instance, int maxLength, string trailing = "", bool trimWhiteSpace = true)
+        public static string Truncate(this string value, int maxLength, string trailing = "", bool trimWhiteSpace = true)
         {
-            string result = instance.Left(maxLength - trailing.Length);
+            string result = value.Left(maxLength - trailing.Length);
 
             if (trimWhiteSpace)
                 result = result.Trim();
@@ -202,42 +234,42 @@ namespace System
 
 
 
-        public static string Localize(this string instance, IStringLocalizer? localizer)
+        public static string Localize(this string value, IStringLocalizer? localizer)
         {
-            return localizer?[instance] ?? instance;
+            return localizer?[value] ?? value;
         }
 
 
-        public static string Localize(this string instance, IStringLocalizer? localizer, params object[] args)
+        public static string Localize(this string value, IStringLocalizer? localizer, params object[] args)
         {
-            return localizer?[instance, args] ?? string.Format(instance, args);
+            return localizer?[value, args] ?? string.Format(value, args);
         }
 
-        public static string ToCase(this string instance, Capitalization capitalization)
+        public static string ToCase(this string value, Capitalization capitalization)
         {
-            if (string.IsNullOrEmpty(instance))
+            if (string.IsNullOrEmpty(value))
                 return string.Empty;
 
             return capitalization switch
             {
-                Capitalization.Lowercase => instance.ToLowerInvariant(),
-                Capitalization.Uppercase => instance.ToUpperInvariant(),
-                Capitalization.TitleCase => instance.ToTitleCase(),
-                Capitalization.TitleCaseExceptConjunctions => instance.ToTitleCase(true),
-                Capitalization.SentenceCase => instance.ToSentenceCase(),
-                _ => instance,
+                Capitalization.Lowercase => value.ToLowerInvariant(),
+                Capitalization.Uppercase => value.ToUpperInvariant(),
+                Capitalization.TitleCase => value.ToTitleCase(),
+                Capitalization.TitleCaseExceptConjunctions => value.ToTitleCase(true),
+                Capitalization.SentenceCase => value.ToSentenceCase(),
+                _ => value,
             };
         }
 
-        public static string ToTitleCase(this string instance, bool lowerCaseConjunctions = false)
+        public static string ToTitleCase(this string value, bool lowerCaseConjunctions = false)
         {
-            if (string.IsNullOrEmpty(instance))
+            if (string.IsNullOrEmpty(value))
                 return string.Empty;
 
-            if (instance.IsAllSameCase())
-                instance = instance.ToLowerInvariant();
+            if (value.IsAllSameCase())
+                value = value.ToLowerInvariant();
 
-            var result = Regex.Replace(instance, @"\b(\w)", m => m.Value.ToUpper());
+            var result = Regex.Replace(value, @"\b(\w)", m => m.Value.ToUpper());
 
             if (lowerCaseConjunctions)
                 result = Regex.Replace(result, @"(\s(of|in|by|and)|\'[st])\b",
@@ -246,20 +278,20 @@ namespace System
             return result;
         }
 
-        public static bool IsAllSameCase(this string instance)
+        public static bool IsAllSameCase(this string value)
         {
-            return (instance == instance.ToUpperInvariant() || instance == instance.ToLowerInvariant());
+            return (value == value.ToUpperInvariant() || value == value.ToLowerInvariant());
         }
 
-        public static string ToSentenceCase(this string instance)
+        public static string ToSentenceCase(this string value)
         {
-            if (string.IsNullOrEmpty(instance))
+            if (string.IsNullOrEmpty(value))
                 return string.Empty;
 
-            if (instance.IsAllSameCase())
-                instance = instance.ToLowerInvariant();
+            if (value.IsAllSameCase())
+                value = value.ToLowerInvariant();
 
-            return Regex.Replace(instance, @"(?<=(^|[.;:])\s*)[a-z]",
+            return Regex.Replace(value, @"(?<=(^|[.;:])\s*)[a-z]",
                 (match) => match.Value.ToUpper());
         }
     }
