@@ -111,6 +111,33 @@ namespace System
         }
 
         /// <summary>
+        /// Creates a newline separated list of items in the input enumerable.
+        /// </summary>
+        /// <param name="items">An enumerable of strings.</param>
+        public static string ToNewLineSeparatedList(this IEnumerable<string?>? items)
+        {
+            if (items is null)
+                return string.Empty;
+
+            items = items.WhereNotNullOrWhiteSpace();
+
+            if (items.Count() == 1)
+                return items.First()!;
+
+            var array = items.ToArray();
+            var builder = new StringBuilder();
+            int first = 0;
+            int last = array.Length - 1;
+
+            for (int i = first; i <= last; i++)
+            {
+                builder.Append(array[i] + Environment.NewLine);
+            }
+
+            return builder.ToString();
+        }
+
+        /// <summary>
         /// Creates a comma separated list of items in the input enumerable, and will optionally say "and" between the penultumate
         /// and the final item.
         /// </summary>
