@@ -263,13 +263,25 @@ namespace System
 
         public static string Localize(this string value, IStringLocalizer? localizer)
         {
-            return localizer?[value] ?? value;
+            if(localizer is null)
+            {
+                return value;
+            }
+
+            string? localized = localizer[value];
+            return localized ?? value;
         }
 
 
         public static string Localize(this string value, IStringLocalizer? localizer, params object[] args)
         {
-            return localizer?[value, args] ?? string.Format(value, args);
+            if (localizer is null)
+            {
+                return value;
+            }
+
+            string? localized = localizer[value, args];
+            return localized ?? value;
         }
 
         public static string ToCase(this string value, Capitalization capitalization)
