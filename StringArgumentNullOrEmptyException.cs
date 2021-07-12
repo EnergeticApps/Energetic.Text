@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Energetic.Text
 {
-    public class EnumerableEmptyException : ArgumentException
+    public class StringArgumentNullOrEmptyException : ArgumentException
     {
-        public EnumerableEmptyException(string paramName) : base("String cannot be null or empty.", paramName)
+        public StringArgumentNullOrEmptyException(string paramName) : base("String cannot be null or empty.", paramName)
         {
         }
     }
